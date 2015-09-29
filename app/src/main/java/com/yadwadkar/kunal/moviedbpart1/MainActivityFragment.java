@@ -15,6 +15,7 @@ import android.widget.GridView;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yadwadkar.kunal.moviedbpart1.api.models.Movie;
+import com.yadwadkar.kunal.moviedbpart1.api.models.SortOrder;
 import com.yadwadkar.kunal.moviedbpart1.api.utils.MovieDataProvider;
 import com.yadwadkar.kunal.moviedbpart1.api.utils.TmdbAPI;
 
@@ -28,31 +29,31 @@ public class MainActivityFragment extends Fragment {
 
     public static final String LOG_TAG = MainActivityFragment.class.getSimpleName();
     public static final String MOVIE_DETAILS_EXTRA = "Movie_Details";
+    public static final String SORT_KEY = "sort_key";
 
-    private MainFetchMoviesTask movieFetcher;
     private ImageAdapter imageAdapter;
     private MovieDataProvider.Sort sortOrder = MovieDataProvider.Sort.POPULARITY_DESC;
 
 
     public MainActivityFragment() {
-        movieFetcher = new MainFetchMoviesTask(new TmdbAPI(new ObjectMapper()));
+
     }
 
     @Override
     public void onStart() {
-        Log.d(LOG_TAG, "Starting...");
         super.onStart();
 
-
-        try {
-            updateMovies();
-        } catch (Exception e) {
-            Log.e("MainFragment", "Unable to get movies");
-        }
     }
 
     private void updateMovies() {
-        movieFetcher.execute();
+        MainFetchMoviesTask fetcher = new MainFetchMoviesTask.Builder()
+                .movieDataProvider(new TmdbAPI(new ObjectMapper()))
+                .imageAdapter(imageAdapter)
+                .sortOrder(sortOrder)
+                .build();
+
+        fetcher.execute();
+
     }
 
     @Override
@@ -60,7 +61,19 @@ public class MainActivityFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
 
+        if (savedInstanceState != null) {
+            SortOrder sortOrder = savedInstanceState.getParcelable(SORT_KEY);
+            this.sortOrder = sortOrder.getValue();
+        }
+
     }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(SORT_KEY, new SortOrder(sortOrder));
+    }
+
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -72,18 +85,16 @@ public class MainActivityFragment extends Fragment {
         int id = item.getItemId();
 
         if (id == R.id.sort_menu_item) {
-            MainFetchMoviesTask fetchTask = new MainFetchMoviesTask(new TmdbAPI(new ObjectMapper()));
-            fetchTask.setAdapter(imageAdapter);
+         ;
             if (sortOrder == MovieDataProvider.Sort.POPULARITY_DESC) {
-                fetchTask.setSortOrder(MovieDataProvider.Sort.RATING_DESC);
                 item.setTitle(R.string.sort_by_popularity);
                 this.sortOrder = MovieDataProvider.Sort.RATING_DESC;
             } else {
-                fetchTask.setSortOrder(MovieDataProvider.Sort.POPULARITY_DESC);
                 item.setTitle(R.string.sort_by_rating);
                 this.sortOrder = MovieDataProvider.Sort.POPULARITY_DESC;
+
             }
-            fetchTask.execute();
+            updateMovies();
             return true;
         }
 
@@ -91,11 +102,24 @@ public class MainActivityFragment extends Fragment {
     }
 
     @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        MenuItem sortOptionMenuItem = menu.findItem(R.id.sort_menu_item);
+
+        if (sortOrder == MovieDataProvider.Sort.POPULARITY_DESC) {
+            sortOptionMenuItem.setTitle(R.string.sort_by_rating);
+        } else {
+            sortOptionMenuItem.setTitle(R.string.sort_by_popularity);
+        }
+
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         imageAdapter = new ImageAdapter(getActivity().getApplicationContext(), new ArrayList<Movie>());
-        movieFetcher.setAdapter(imageAdapter);
+
 
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
@@ -104,6 +128,13 @@ public class MainActivityFragment extends Fragment {
 
         movieGrid.setAdapter(imageAdapter);
         imageAdapter.notifyDataSetChanged();
+
+
+        try {
+            updateMovies();
+        } catch (Exception e) {
+            Log.e("MainFragment", "Unable to get movies");
+        }
 
         movieGrid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override

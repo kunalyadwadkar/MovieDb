@@ -15,19 +15,15 @@ import com.yadwadkar.kunal.moviedbpart1.api.utils.MovieDataProvider;
 public class MainFetchMoviesTask extends AsyncTask<Void, Void, DiscoveredMovies> {
 
     public static final String LOG_TAG = MainFetchMoviesTask.class.getCanonicalName();
-    private MovieDataProvider movieDataProvider;
-    private ImageAdapter adapter;
+    private final MovieDataProvider movieDataProvider;
+    private final ImageAdapter adapter;
 
-    public MainFetchMoviesTask(MovieDataProvider movieDataProvider) {
+    private MainFetchMoviesTask(MovieDataProvider movieDataProvider,
+                               ImageAdapter adapter,
+                               MovieDataProvider.Sort sortOrder) {
         this.movieDataProvider = movieDataProvider;
-    }
-
-    public void setAdapter(ImageAdapter adapter) {
         this.adapter = adapter;
-    }
-
-    public void setSortOrder(MovieDataProvider.Sort sortOrder) {
-        movieDataProvider.setSortOrder(sortOrder);
+        this.movieDataProvider.setSortOrder(sortOrder);
     }
 
     @Override
@@ -52,6 +48,31 @@ public class MainFetchMoviesTask extends AsyncTask<Void, Void, DiscoveredMovies>
                 adapter.add(movie);
             }
             adapter.notifyDataSetChanged();
+        }
+    }
+
+    public static class Builder {
+        private MovieDataProvider movieDataProvider;
+        private MovieDataProvider.Sort sortOrder;
+        private ImageAdapter imageAdapter;
+
+        public Builder movieDataProvider(MovieDataProvider movieDataProvider) {
+            this.movieDataProvider = movieDataProvider;
+            return this;
+        }
+
+        public Builder sortOrder(MovieDataProvider.Sort sortOrder) {
+            this.sortOrder = sortOrder;
+            return this;
+        }
+
+        public Builder imageAdapter(ImageAdapter imageAdapter) {
+            this.imageAdapter = imageAdapter;
+            return this;
+        }
+
+        public MainFetchMoviesTask build() {
+            return new MainFetchMoviesTask(movieDataProvider, imageAdapter, sortOrder);
         }
     }
 }

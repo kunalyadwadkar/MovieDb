@@ -5,7 +5,7 @@ package com.yadwadkar.kunal.moviedbpart1.api.configuration;
  */
 public class Constants {
 
-    public static final String API_KEY = "";
+    public static final String API_KEY = "edda29883f91f809aa1662f71e85c3dd";
 
     public static final String URL_BASE = "http://api.themoviedb.org/3/";
 
